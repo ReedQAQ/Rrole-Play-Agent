@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f5f4f0" />
+    <title>角色对话</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">对</div>
+          <div>
+            <div class="brand-name">角色对话</div>
+            <div class="brand-caption">Assistant · Role Play</div>
+          </div>
+        </div>
+
+        <button id="new-conversation" class="new-chat-button" type="button">
+          <span aria-hidden="true">＋</span>
+          <span>新建助手对话</span>
+        </button>
+
+        <div class="sidebar-label">最近对话</div>
+        <nav id="conversation-list" class="conversation-list" aria-label="对话列表"></nav>
+
+        <div class="sidebar-footer">
+          <span id="connection-dot" class="connection-dot"></span>
+          <span id="connection-label">正在连接后端…</span>
+        </div>
+      </aside>
+
+      <main class="chat-panel">
+        <header class="chat-header">
+          <div class="chat-heading">
+            <div id="conversation-kind" class="conversation-kind">未选择对话</div>
+            <h1 id="conversation-title">欢迎</h1>
+          </div>
+          <div id="header-status" class="header-status" role="status"></div>
+        </header>
+
+        <section id="messages" class="messages" aria-live="polite">
+          <div class="empty-state">
+            <div class="empty-icon" aria-hidden="true">✦</div>
+            <h2>从一段对话开始</h2>
+            <p>新建一个助手对话，或从左侧打开已有对话。</p>
+          </div>
+        </section>
+
+        <form id="message-form" class="composer">
+          <label class="sr-only" for="message-input">输入消息</label>
+          <textarea
+            id="message-input"
+            rows="1"
+            placeholder="给 Assistant 发消息…"
+            disabled
+          ></textarea>
+          <div class="composer-bottom">
+            <span class="composer-hint">Enter 发送 · Shift + Enter 换行</span>
+            <button id="send-button" class="send-button" type="submit" disabled>
+              <span>发送</span>
+              <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+        </form>
+      </main>
+    </div>
+    <script src="./app.js" defer></script>
+  </body>
+</html>
