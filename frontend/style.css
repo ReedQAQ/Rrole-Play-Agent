@@ -27,7 +27,7 @@ button { color: inherit; }
 
 .app-shell {
   display: grid;
-  grid-template-columns: 278px minmax(0, 1fr);
+  grid-template-columns: 390px minmax(0, 1fr);
   width: min(1440px, 100%);
   min-height: 100vh;
   margin: 0 auto;
@@ -87,12 +87,16 @@ button { color: inherit; }
   letter-spacing: .12em;
   text-transform: uppercase;
 }
-.conversation-list { display: grid; gap: 4px; overflow-y: auto; }
+.conversation-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; min-height: 0; flex: 1; }
+.conversation-group { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.conversation-list { display: grid; align-content: start; gap: 4px; overflow-y: auto; }
+.conversation-row { display: flex; align-items: center; gap: 2px; min-width: 0; }
 .conversation-item {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 10px 9px;
   border: 0;
   border-radius: 9px;
@@ -100,6 +104,21 @@ button { color: inherit; }
   cursor: pointer;
   text-align: left;
 }
+.delete-conversation-button {
+  display: grid;
+  flex: 0 0 25px;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  color: #9b9d95;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0;
+}
+.conversation-row:hover .delete-conversation-button, .delete-conversation-button:focus-visible { color: #a34f43; background: #f7e9e5; opacity: 1; }
+.delete-conversation-button:disabled { cursor: not-allowed; }
 .conversation-item:hover { background: #f1f0eb; }
 .conversation-item.active { background: #e9eee7; }
 .conversation-icon {
@@ -118,7 +137,7 @@ button { color: inherit; }
 .conversation-copy { min-width: 0; padding-top: 1px; }
 .conversation-name {
   overflow: hidden;
-  max-width: 190px;
+  max-width: 130px;
   color: #3c3e38;
   font-size: 12px;
   font-weight: 600;
@@ -269,10 +288,12 @@ button { color: inherit; }
   .app-shell { grid-template-columns: 74px minmax(0, 1fr); }
   .sidebar { align-items: center; padding: 18px 8px 13px; }
   .brand { padding: 0; }
-  .brand > div:last-child, .new-chat-button span:last-child, .sidebar-label, .conversation-copy, .sidebar-footer span:last-child { display: none; }
+  .brand > div:last-child, .new-chat-button span:last-child, .sidebar-label, .conversation-copy, .sidebar-footer span:last-child, .delete-conversation-button { display: none; }
   .new-chat-button { width: 42px; height: 42px; margin: 24px 0 20px; padding: 0; font-size: 22px; }
+  .conversation-columns { width: 100%; grid-template-columns: 1fr; gap: 4px; }
   .conversation-list { width: 100%; justify-items: center; }
-  .conversation-item { justify-content: center; width: 48px; padding: 8px; }
+  .conversation-row { justify-content: center; width: 100%; }
+  .conversation-item { justify-content: center; width: 48px; flex: 0 0 48px; padding: 8px; }
   .conversation-icon { width: 32px; height: 32px; }
   .sidebar-footer { margin-top: auto; padding: 14px 0 0; }
   .chat-header { min-height: 72px; padding-right: 16px; padding-left: 18px; }

@@ -116,7 +116,7 @@ app = FastAPI(title="Role Play Assistant API", version="0.1.0", lifespan=lifespa
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -184,6 +184,23 @@ def get_conversation(conversation_id: str):
     }
 
 
+@app.delete("/conversations/{conversation_id}")
+def delete_conversation(conversation_id: str):
+    load_conversation(conversation_id)
+    lock = app.state.conversation_locks.setdefault(conversation_id, threading.Lock())
+    with lock, sqlite3.connect(DB_PATH) as db:
+        # LangGraph's SQLite checkpointer stores state in tables keyed by thread_id.
+        tables = db.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        ).fetchall()
+        for (table_name,) in tables:
+            columns = {row[1] for row in db.execute(f'PRAGMA table_info("{table_name}")')}
+            if "thread_id" in columns:
+                db.execute(f'DELETE FROM "{table_name}" WHERE thread_id = ?', (conversation_id,))
+        db.execute("DELETE FROM conversations WHERE conversation_id = ?", (conversation_id,))
+    return {"conversation_id": conversation_id, "deleted": True}
+
+
 @app.post("/conversations/{conversation_id}/messages")
 def send_message(conversation_id: str, request: SendMessageRequest):
     load_conversation(conversation_id)
@@ -209,7 +226,10 @@ def send_message(conversation_id: str, request: SendMessageRequest):
 
         result = graph.invoke(
             state,
-            config={"configurable": {"thread_id": conversation_id}},
+            config={"configurable": {
+                "thread_id": conversation_id,
+                "conversation_turn_count": row["turn_count"],
+            }},
         )
         answer = next(
             (message.content for message in reversed(result.get("messages", []))

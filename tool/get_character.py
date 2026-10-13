@@ -13,7 +13,9 @@ def get_existing_characters() -> str:
 
     Returns each character's internal ID, name, and identity description.
     Use this before creating a character to decide whether an existing ID
-    should be reused. The ID is internal and should not be shown to the user.
+    should be reused, and before reading a character's history or state to
+    resolve the exact character_id. The ID is internal and should not be shown
+    to the user.
     """
     with sqlite3.connect(DB_PATH) as db:
         rows = db.execute(
@@ -55,6 +57,8 @@ def create_character_messages_tool(character_graph):
     def get_character_messages(character_id: str, limit: int = 20) -> str:
         """查看指定角色最近更新的角色扮演对话的上下文和近期消息。
 
+        character_id 必须是 get_existing_characters 返回的内部 ID，不能传角色名称。
+        若返回 found=false，表示数据库中没有匹配的角色对话；若 found=true 但消息列表为空，表示会话存在但还没有可读取的消息。
         上下文包含较早对话摘要、初始情境和 checkpoint 中保留的近期消息。
         Args:
             character_id: 角色 ID。
@@ -99,6 +103,9 @@ def create_character_state_tool(character_graph):
     def get_character_state(character_id: str) -> str:
         """查看指定角色最近更新的角色扮演对话中的心情、能量和内心想法。
 
+        character_id 必须是 get_existing_characters 返回的内部 ID，不能传角色名称。
+        若返回 found=false，只表示没有找到匹配的角色对话记录。
+
         Args:
             character_id: 角色 ID。
         """
@@ -126,7 +133,14 @@ def create_character_state_tool(character_graph):
             "conversation_id": row["conversation_id"],
             "mood": dynamic.get("mood", ""),
             "energy_level": dynamic.get("energy_level"),
-            "inner_thoughts": values.get("cognitive_workspace", ""),
+            "inner_thoughts": values.get(
+                "last_cognitive_workspace",
+                values.get("cognitive_workspace", ""),
+            ),
+            "inner_thoughts_user_message": values.get(
+                "last_cognitive_workspace_user_message", ""
+            ),
+            "inner_thoughts_scope": "最近一次复杂轮次；不是当前简单轮次的即时思考。",
         }, ensure_ascii=False, default=str)
 
     return get_character_state

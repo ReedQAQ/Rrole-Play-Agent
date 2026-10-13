@@ -3,6 +3,7 @@ from typing import Literal
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
 
 from graph.context_summary import prepare_context_summary
 from graph.state import CharacterState, PersonalityProfile
@@ -33,7 +34,7 @@ def _conversation_messages(messages: list[AnyMessage]) -> list[AnyMessage]:
     return conversation
 
 
-def trigger_node(state: CharacterState) -> dict[str, object]:
+def trigger_node(state: CharacterState, config: RunnableConfig) -> dict[str, object]:
     """标记本轮走简单回复还是复杂认知路径。"""
     messages = state.get("messages", [])
     action = _message_content(_last_user_message(messages))
@@ -47,7 +48,10 @@ def trigger_node(state: CharacterState) -> dict[str, object]:
         "sick", "blood", "marriage", "leave", "die", "worry", "threat", "crisis", "urgent",
     )
     action_lower = action.lower()
-    is_complex = any(keyword in action_lower for keyword in emotional_keywords)
+    turn_count = config.get("configurable", {}).get("conversation_turn_count")
+    is_complex = turn_count == 0 or any(
+        keyword in action_lower for keyword in emotional_keywords
+    )
     if not is_complex:
         is_complex = any(
             interest and interest.lower() in action_lower
@@ -117,12 +121,12 @@ def cognitive_workspace_node(
 角色相关记忆为：
 【{filtered_memories or "没有可用的相关记忆。"}】
 
-生成你的内部想法（不对外说出）。
+这里是你的内心独白空间，生成你的内部想法。
 
 思考以下问题：
 1. 根据你的人格，这件事让你有什么感受？
 2. 如果你感到压力，你的防御机制（{profile.defense_mechanism}）会如何影响你的认知？
-3. 你真正想表达什么、为什么这样想？
+3. 你真正想的是什么、为什么这样想？
 
 请根据你的性格生成一段**内心独白**（不要输出给用户看，仅用于生成下一步行为）。
 
@@ -133,13 +137,18 @@ def cognitive_workspace_node(
 - 外向性高于 0.7：想法积极、主动。
 - 能量较低：想法简短，体现疲惫。
 
-只输出内部想法。不要生成对用户说出的回复。"""
+只输出自己的心声，不要生成对用户说出的回复。"""
     result = llm.invoke([SystemMessage(content=system_prompt), *conversation])
     content = getattr(result, "content", result)
     if not isinstance(content, str):
         content = str(content)
+    cognitive_workspace = content.strip()
     update: dict[str, object] = {
-        "cognitive_workspace": content.strip(),
+        "cognitive_workspace": cognitive_workspace,
+        "last_cognitive_workspace": cognitive_workspace,
+        "last_cognitive_workspace_user_message": _message_content(
+            _last_user_message(state.get("messages", []))
+        ),
         "messages": removed_messages,
     }
     if summary_updated:

@@ -23,8 +23,16 @@
           <span>新建助手对话</span>
         </button>
 
-        <div class="sidebar-label">最近对话</div>
-        <nav id="conversation-list" class="conversation-list" aria-label="对话列表"></nav>
+        <div class="conversation-columns">
+          <section class="conversation-group">
+            <div class="sidebar-label">Assistant</div>
+            <nav id="assistant-conversation-list" class="conversation-list" aria-label="Assistant 对话"></nav>
+          </section>
+          <section class="conversation-group">
+            <div class="sidebar-label">Role Play</div>
+            <nav id="role-play-conversation-list" class="conversation-list" aria-label="角色对话"></nav>
+          </section>
+        </div>
 
         <div class="sidebar-footer">
           <span id="connection-dot" class="connection-dot"></span>

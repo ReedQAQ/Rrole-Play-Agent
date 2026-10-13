@@ -1,6 +1,7 @@
 const API_BASE = "";
 
-const conversationList = document.querySelector("#conversation-list");
+const assistantConversationList = document.querySelector("#assistant-conversation-list");
+const rolePlayConversationList = document.querySelector("#role-play-conversation-list");
 const messagesElement = document.querySelector("#messages");
 const messageForm = document.querySelector("#message-form");
 const messageInput = document.querySelector("#message-input");
@@ -45,16 +46,20 @@ function displayName(conversation) {
 }
 
 function renderConversationList() {
-  conversationList.replaceChildren();
-  if (!conversations.length) {
-    const empty = document.createElement("div");
-    empty.className = "list-empty";
-    empty.textContent = "还没有对话";
-    conversationList.append(empty);
-    return;
-  }
-
-  for (const conversation of conversations) {
+  assistantConversationList.replaceChildren();
+  rolePlayConversationList.replaceChildren();
+  const grouped = [
+    [assistantConversationList, conversations.filter((item) => item.mode !== "role-play")],
+    [rolePlayConversationList, conversations.filter((item) => item.mode === "role-play")],
+  ];
+  for (const [list, items] of grouped) {
+    if (!items.length) {
+      const empty = document.createElement("div");
+      empty.className = "list-empty";
+      empty.textContent = "还没有对话";
+      list.append(empty);
+    }
+    for (const conversation of items) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "conversation-item";
@@ -78,8 +83,22 @@ function renderConversationList() {
     subtitle.textContent = conversation.mode === "role-play" ? "角色扮演" : "Assistant";
     copy.append(name, subtitle);
     button.append(icon, copy);
+    const row = document.createElement("div");
+    row.className = "conversation-row";
     button.addEventListener("click", () => openConversation(conversation.conversation_id));
-    conversationList.append(button);
+    row.append(button);
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "delete-conversation-button";
+    remove.textContent = "×";
+    remove.title = `删除${displayName(conversation)}`;
+    remove.setAttribute("aria-label", `删除${displayName(conversation)}`);
+    remove.disabled = sending;
+    remove.addEventListener("click", () => deleteConversation(conversation));
+    row.append(remove);
+    list.append(row);
+    }
   }
 }
 
@@ -127,7 +146,7 @@ function appendMessage(role, content, className = "") {
 
 function updateHeader() {
   newConversationButton.disabled = sending;
-  conversationList.querySelectorAll(".conversation-item").forEach((button) => {
+  document.querySelectorAll(".conversation-item, .delete-conversation-button").forEach((button) => {
     button.disabled = sending;
   });
   if (!activeConversation) {
@@ -144,6 +163,27 @@ function updateHeader() {
     : "给 Assistant 发消息…";
   messageInput.disabled = sending;
   sendButton.disabled = sending;
+}
+
+async function deleteConversation(conversation) {
+  const name = displayName(conversation);
+  if (!window.confirm(`确定删除“${name}”吗？此操作无法撤销。`)) return;
+  try {
+    await api(`/conversations/${encodeURIComponent(conversation.conversation_id)}`, { method: "DELETE" });
+    if (activeConversation?.conversation_id === conversation.conversation_id) {
+      activeConversation = null;
+      activeMessages = [];
+      localStorage.removeItem("activeConversationId");
+      updateHeader();
+      renderMessages();
+    }
+    await refreshConversations();
+    if (!activeConversation && conversations.length) {
+      await openConversation(conversations[0].conversation_id);
+    }
+  } catch (error) {
+    headerStatus.textContent = `删除失败：${error.message}`;
+  }
 }
 
 async function refreshConversations() {

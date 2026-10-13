@@ -70,6 +70,8 @@ class CharacterState(TypedDict):
     personality:PersonalityProfile
     trigger_result:NotRequired[Literal["simple", "complex"]]
     cognitive_workspace:NotRequired[str]
+    last_cognitive_workspace:NotRequired[str]
+    last_cognitive_workspace_user_message:NotRequired[str]
     filtered_memories:NotRequired[str]
     memory_proposal:NotRequired[dict[str, object] | None]
     memory_update_status:NotRequired[str]
